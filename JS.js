@@ -1,70 +1,58 @@
+import React, {useState} from 'react';
+import Router from 'next/router';
+import cookie from 'js-cookie';
 
-(function ($) {
-    "use strict";
+const Login = () => {
+  const [loginError, setLoginError] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
 
-
-    /*==================================================================
-    [ Focus Contact2 ]*/
-    $('.input100').each(function(){
-        $(this).on('blur', function(){
-            if($(this).val().trim() != "") {
-                $(this).addClass('has-val');
-            }
-            else {
-                $(this).removeClass('has-val');
-            }
-        })    
+  function handleSubmit(e) {
+    e.preventDefault();
+    //call api
+    fetch('/api/auth', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        password,
+      }),
     })
-  
-  
-    /*==================================================================
-    [ Validate ]*/
-    var input = $('.validate-input .input100');
-
-    $('.validate-form').on('submit',function(){
-        var check = true;
-
-        for(var i=0; i<input.length; i++) {
-            if(validate(input[i]) == false){
-                showValidate(input[i]);
-                check=false;
-            }
+      .then((r) => {
+        return r.json();
+      })
+      .then((data) => {
+        if (data && data.error) {
+          setLoginError(data.message);
         }
-
-        return check;
-    });
-
-
-    $('.validate-form .input100').each(function(){
-        $(this).focus(function(){
-           hideValidate(this);
-        });
-    });
-
-    function validate (input) {
-        if($(input).attr('type') == 'email' || $(input).attr('name') == 'email') {
-            if($(input).val().trim().match(/^([a-zA-Z0-9_\-\.]+)@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.)|(([a-zA-Z0-9\-]+\.)+))([a-zA-Z]{1,5}|[0-9]{1,3})(\]?)$/) == null) {
-                return false;
-            }
+        if (data && data.token) {
+          //set cookie
+          cookie.set('token', data.token, {expires: 2});
+          Router.push('/');
         }
-        else {
-            if($(input).val().trim() == ''){
-                return false;
-            }
-        }
-    }
+      });
+  }
+  return (
+    <form onSubmit={handleSubmit}>
+      <p>Login</p>
+      <input
+        name="email"
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+      />
+      <input
+        name="password"
+        type="password"
+        value={password}
+        onChange={(e) => setPassword(e.target.value)}
+      />
+      <input type="submit" value="Submit" />
+      {loginError && <p style={{color: 'red'}}>{loginError}</p>}
+    </form>
+  );
+};
 
-    function showValidate(input) {
-        var thisAlert = $(input).parent();
-
-        $(thisAlert).addClass('alert-validate');
-    }
-
-    function hideValidate(input) {
-        var thisAlert = $(input).parent();
-
-        $(thisAlert).removeClass('alert-validate');
-    }
-    
-
-})(jQuery);
+export default Login;
